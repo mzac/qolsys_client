@@ -1,4 +1,4 @@
-# qolsys-client
+# qolsys_client
 
 Python package to talk to Qolsys Alarm Panels
 
