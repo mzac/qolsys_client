@@ -17,10 +17,6 @@ class mqtt:
     def publish(self, topic:str, message:str):
         if topic == "" or message == "":
             raise Exception("Topic and Message required")
-        # if json.dumps(message):
-        #     message = json.dumps((message).encode())
-        # else:
-        #     message = message.encode()
         published = self.client.publish(topic, message)
         while not published.is_published():
             time.sleep(0.5)
