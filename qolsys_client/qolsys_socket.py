@@ -5,6 +5,7 @@ import sys
 import time
 import asyncio
 import threading
+import logging
 
 class qolsys:
     ################################################################################
@@ -19,30 +20,29 @@ class qolsys:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.settimeout(timeout)
         except socket.error:
-            print('Could not create a socket')
+            logging.error('Could not create a socket')
             raise
 
         # Wrap SSL
-        print("wrapping socket")
+        logging.debug("wrapping socket")
         self.wrappedSocket = ssl.wrap_socket(self.sock, cert_reqs=ssl.CERT_NONE, ssl_version=ssl.PROTOCOL_TLSv1_2)
-        # print("wrappedSocket: ", self.wrappedSocket)
+
         # Connect to server
         try:
             #The stupid Qolsys panel requires blocking
             # wrappedSocket.setblocking(False)
-            print("connecting to socket")
+            logging.debug("connecting to socket")
             self.wrappedSocket.connect((hostname, port))
-            print("Connected wrappedSocket:", self.wrappedSocket)
-            print("Starting listener thread")
-            #print("timeout:", self.sock.gettimeout())
+            logging.debug(("Connected wrappedSocket:", self.wrappedSocket))
             
+            logging.debug("Starting listener thread")
             thread = threading.Thread(target=self.listen, args=([cb]))
             thread.start()
+            logging.debug("started listener")
             
-            print("started listener")
             return True
         except socket.error:
-            print(sys.exc_info()[0]) 
+            logging.error(("Error creating or connecting to socket", sys.exc_info()))
             return False
 
     def send_to_socket(self, message: json):
@@ -54,12 +54,12 @@ class qolsys:
 
     def listen(self, cb: callable):
         listening = True
-        print("starting listen")
+        logging.debug("starting listen")
         data = ""
         err = ""
         while not (self.wrappedSocket._connected):
-            print("not connected yet")
-            print(self.wrappedSocket._connected)
+            logging.warning("not connected yet")
+            logging.debug(self.wrappedSocket._connected)
             time.sleep(1)
         try:
             while self.wrappedSocket._connected:
@@ -68,14 +68,15 @@ class qolsys:
                     try:
                         cb(data)
                     except:
-                        print("Error calling callback:", cb, sys.exc_info())
+                        logging.error(("Error calling callback:", cb, sys.exc_info()))
                     #print(data)
                 else:
-                    print("non json data:", data)
+                    if data != 'ACK\n':
+                        logging.warning(("non json data:", data))
         except socket.timeout:
-            print ("socket timeout")
+            logging.debug("socket timeout")
         except:
-            print("listen failed/stopped:", sys.exc_info())
+            logging.error(("listen failed/stopped:", sys.exc_info()))
 
 
 def is_json(myjson):
@@ -83,5 +84,6 @@ def is_json(myjson):
         json_object = json.loads(myjson)
         if json_object: return True
     except ValueError as e:
-        #print("not json:", myjson)
+        if myjson != 'ACK\n':
+            logging.debug(("not json:", myjson))
         return False
