@@ -53,10 +53,10 @@ class qolsys:
         return True
 
     def listen(self, cb: callable):
-        listening = True
+        #listening = True
         logging.debug("starting listen")
         data = ""
-        err = ""
+        #err = ""
         while not (self.wrappedSocket._connected):
             logging.warning("not connected yet")
             logging.debug(self.wrappedSocket._connected)
@@ -72,7 +72,8 @@ class qolsys:
                     #print(data)
                 else:
                     if data != 'ACK\n':
-                        logging.warning(("non json data:", data))
+                        pass
+                        #logging.warning(("non json data:", data))
         except socket.timeout:
             logging.debug("socket timeout")
         except:
@@ -83,7 +84,8 @@ def is_json(myjson):
     try:
         json_object = json.loads(myjson)
         if json_object: return True
-    except ValueError as e:
+    except:
         if myjson != 'ACK\n':
             logging.debug(("not json:", myjson))
+            logging.debug(("Error:", sys.exc_info()))
         return False
