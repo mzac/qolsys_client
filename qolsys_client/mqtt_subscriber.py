@@ -15,32 +15,50 @@ class MQTTSubscriber:
         self._arming_types = ["away", "stay", "disarm"]
 
 
-        mqtt_sub = mqtt_client.mqtt("192.168.10.4", 1883)
+        logging.debug(("MQTT Subscriber: ", self.broker, ":", self.port, ":", self.topics))
+        mqtt_sub = mqtt_client.mqtt(self.broker, self.port)
         mqtt_sub.subscribe(topics=self.topics, cb=self.mqtt_request_received)
 
     def mqtt_request_received(self, client, userdata, message:MQTTMessage):
         '''Runs when a MQTT event is received on the request topic
         
             Parameters:
-                data: json object containing the request to send to the qolsys panel'''
+                data: json object containing the request to send to the qolsys panel
+            
+            Expected JSON Message:
+                Required:
+                    event                   INFO, ARM, DISARM
+                    token                   Qolsys IQ Panel token
+
+                Optional
+                    usercode                Required if disarming
+                    partition_id            Required if arming or disarming.  0 is a good value if you don't know what to use
+                    arm_type                Required if arming.  Options are "away" or "stay"
+                '''
 
         logging.debug(("client:", client))
         logging.debug(("userdata:", userdata))
+        logging.debug(("message:", message))
         payload = message.payload
-        logging.debug(("message:", payload))
+        logging.debug(("payload:", payload))
         payload_json = {}
         event_type = ""
 
         try:
             if json.loads(payload):
                 payload_json = json.loads(payload)
-                logging.debug(("payload:", payload_json))
-                event_type = payload_json["event"]
-                logging.debug(("event:", event_type))
+                logging.debug(("payload_json:", payload_json))
         except:
             logging.debug(("Error converting to JSON:", sys.exc_info()))
             logging.debug(("Not JSON:", payload))
         
+        try:
+            event_type = payload_json["event"]
+            logging.debug(("event:", event_type))
+        except:
+            logging.error(('Unable to find "event"', payload_json))
+            #raise("Unable to receive MQTT requests")
+
         if event_type != "":
             token = payload_json["token"] if "token" in payload_json else None
             usercode = payload_json["usercode"] if "usercode" in payload_json else None
@@ -48,16 +66,23 @@ class MQTTSubscriber:
             arm_type = payload_json["arm_type"] if "arm_type" in payload_json else None
 
             if token == None:
-                raise("Token required for anything you want to do")
+                #raise("Token required for anything you want to do")
+                logging.error("No token provided.  Token is required for anything you want to do with the Qolsys panel")
+            else:
+                if event_type == "INFO":
+                    self.qolsys_status(self.qolsys, token)
                 
-            if event_type == "INFO":
-                self.qolsys_status(self.qolsys, token)
-            
-            if event_type == "ARM":
-                self.qolsys_arm(self.qolsys, token, arm_type, partition_id)
+                if event_type == "ARM":
+                    if partition_id is None or arm_type is None:
+                        logging.error(("arm_type and partition_id are required"))
+                    else:                    
+                        self.qolsys_arm(self.qolsys, token, arm_type, partition_id)
 
-            if event_type == "DISARM":
-                self.qolsys_arm(self.qolsys, token, "disarm", partition_id, usercode)
+                if event_type == "DISARM":
+                    if partition_id is None or arm_type is None or usercode is None:
+                        logging.error(("arm_type, partition_id, and usercode are required"))
+                    else:                    
+                        self.qolsys_arm(self.qolsys, token, "disarm", partition_id, usercode)
 
     def qolsys_arm(self, qolsys, token:str, arming_type:str, partition_id:int, usercode=""):
         if not arming_type in self._arming_types:

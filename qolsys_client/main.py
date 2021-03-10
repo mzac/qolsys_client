@@ -1,6 +1,5 @@
 import sys
 import time
-#import threading
 import json
 import logging
 from paho.mqtt.client import MQTTMessage
@@ -9,7 +8,7 @@ from mqtt_subscriber import MQTTSubscriber
 
 ################################################################################
 # Code
-args = {}
+#args = {}
 
 def qolsys_data_received(data:dict):
     ''' This is where any json data coming from the qolsys panel will be sent.
@@ -18,6 +17,7 @@ def qolsys_data_received(data:dict):
         Parameters:
             data: json object containing the output from the qolsys panel'''
 
+    args = get_command_line_args()
     if "mqtt-broker" in args:
         mqtt_broker = args["mqtt-broker"]
         mqtt_port = args["mqtt-port"] if "mqtt-port" in args else 1883
@@ -54,8 +54,25 @@ def main():
     token, host = args["token"], args["host"]
     port = int(args["port"]) if "port" in args else 12345
     timeout = int(args["timeout"]) if "timeout" in args else 86400
+    mqtt_broker = args["mqtt-broker"] if "mqtt-broker" in args else None
+    mqtt_port = args["mqtt-port"] if "mqtt-port" in args else 1883
     #usercode = (args["usercode"]) if "usercode" in args else None
+    topics = [] #args["topics"] if "topics" in args else ["qolsys/requests"]
+    if args["topics"]:
+        topic_data = str(args["topics"])
+        logging.debug(("topics arg:", topic_data))
+        if topic_data.find(",") > 0:
+            topic_array = args["topics"].split(",")
+            logging.debug(("topic_array:", topic_array))
+            for t in topic_array:
+                logging.debug(("t:", t))
+                topics.append(t)
+        else:
+            topics.append(topic_data)
+    else:
+        raise("No topics")
 
+    
     logging.debug("Creating qolsys_socket")
     qolsys = qolsys_socket.qolsys()
 
@@ -67,11 +84,14 @@ def main():
     #qolsys_status(qolsys, token)
 
     #qolsys_arm(qolsys,token,"stay")
-    mqtt_sub = MQTTSubscriber(broker="192.168.10.4", port=1883, qolsys=qolsys, topics=["qolsys/requests"])
+    if mqtt_broker:
+        mqtt_sub = MQTTSubscriber(broker=mqtt_broker, port=mqtt_port, qolsys=qolsys, topics=topics)
+    else:
+        logging.info("No MQTT Broker.  Only getting status events from panel")
    
 
 def get_command_line_args() -> dict:
-    #args = {}
+    args = {}
     for arg in sys.argv[1:]:
         arg_name = ""
         arg_value = ""
@@ -95,11 +115,17 @@ def help():
                 --port          Port to connect on the Qolsys panel.  Usually 12345
                 --timeout       Timeout (seconds) to wait after last data sent/received from the panel before disconnecting.  Default will be one day.
                 --token         Token from the Qolsys panel
-                --usercode      If you want to use disarm, you need to supply a usercode
+                --usercode      (UNUSED) If you want to use disarm, you need to supply a usercode
             
             Optional:
                 --mqtt-broker   IP address or hostname of the MQTT broker
                 --mqtt-port     MQTT broker port to connect to (default is 1883)
+                --topics        A list (array) of topics to subscribe to for qolsys event requests e.g. --topics=["qolsys/requests"] (Default)
+            
+            Usage:
+                python3 main.py --host=192.168.1.123 --port=12345 --token=yourtoken --timeout=86400 --mqtt-broker=192.168.1.2 --mqtt-port=1883 --topics=["qolsys/requests"]
+            
+
             """
     print(help_text)
     sys.exit()
