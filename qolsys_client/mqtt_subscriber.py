@@ -64,7 +64,7 @@ class MQTTSubscriber:
             usercode = payload_json["usercode"] if "usercode" in payload_json else None
             partition_id = payload_json["partition_id"] if "partition_id" in payload_json else None
             arm_type = payload_json["arm_type"] if "arm_type" in payload_json else None
-
+            logging.debug(("event:", event_type,"usercode:", usercode, "partition_id", partition_id, "arm_type", arm_type))
             if token == None:
                 #raise("Token required for anything you want to do")
                 logging.error("No token provided.  Token is required for anything you want to do with the Qolsys panel")
@@ -79,6 +79,7 @@ class MQTTSubscriber:
                         self.qolsys_arm(self.qolsys, token, arm_type, partition_id)
 
                 if event_type == "DISARM":
+                    arm_type = "disarm"
                     if partition_id is None or arm_type is None or usercode is None:
                         logging.error(("arm_type, partition_id, and usercode are required"))
                     else:                    

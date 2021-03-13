@@ -31,6 +31,7 @@ def qolsys_data_received(data:dict):
         if event_type == "ZONE_UDPATE":
             topic += "zone_update"
 
+        logging.debug(("publishing " + event_type + " event to: " + topic))
         mq = mqtt_client.mqtt(mqtt_broker, mqtt_port)
         mq.publish(topic, data)
     else:
@@ -46,17 +47,16 @@ def main():
         help()
     if not "token" in args:
         print("Qolsys IQ 2 Panel token required")
-        sys.exit()
+        help()#sys.exit()
     if not "host" in args:
         print("Qolsys IQ 2 Panel IP address or hostname required")
-        sys.exit()
+        help()#sys.exit()
 
     token, host = args["token"], args["host"]
     port = int(args["port"]) if "port" in args else 12345
     timeout = int(args["timeout"]) if "timeout" in args else 86400
     mqtt_broker = args["mqtt-broker"] if "mqtt-broker" in args else None
     mqtt_port = args["mqtt-port"] if "mqtt-port" in args else 1883
-    #usercode = (args["usercode"]) if "usercode" in args else None
     topics = [] #args["topics"] if "topics" in args else ["qolsys/requests"]
     if args["topics"]:
         topic_data = str(args["topics"])
