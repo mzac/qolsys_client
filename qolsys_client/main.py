@@ -21,6 +21,8 @@ def qolsys_data_received(data:dict):
     if "mqtt-broker" in args:
         mqtt_broker = args["mqtt-broker"]
         mqtt_port = args["mqtt-port"] if "mqtt-port" in args else 1883
+        mqtt_user = args["mqtt-user"] if "mqtt-user" in args else None
+        mqtt_pass = args["mqtt-pass"] if "mqtt-pass" in args else None
         topic = "qolsys/"
         jdata = json.loads(data)
         event_type = jdata["event"]
@@ -32,7 +34,7 @@ def qolsys_data_received(data:dict):
             topic += "zone_update"
 
         logging.debug(("publishing " + event_type + " event to: " + topic))
-        mq = mqtt_client.mqtt(mqtt_broker, mqtt_port)
+        mq = mqtt_client.mqtt(mqtt_broker, mqtt_user, mqtt_pass, mqtt_port)
         mq.publish(topic, data)
     else:
         print(data)
@@ -57,8 +59,10 @@ def main():
     timeout = int(args["timeout"]) if "timeout" in args else 86400
     mqtt_broker = args["mqtt-broker"] if "mqtt-broker" in args else None
     mqtt_port = args["mqtt-port"] if "mqtt-port" in args else 1883
+    mqtt_user = args["mqtt-user"] if "mqtt-user" in args else None
+    mqtt_pass = args["mqtt-pass"] if "mqtt-pass" in args else None
     topics = [] #args["topics"] if "topics" in args else ["qolsys/requests"]
-    if args["topics"]:
+    if "topics" in args:
         topic_data = str(args["topics"])
         logging.debug(("topics arg:", topic_data))
         if topic_data.find(",") > 0:
@@ -70,9 +74,8 @@ def main():
         else:
             topics.append(topic_data)
     else:
-        raise("No topics")
+        logging.debug("No topics")
 
-    
     logging.debug("Creating qolsys_socket")
     qolsys = qolsys_socket.qolsys()
 
@@ -88,7 +91,6 @@ def main():
         mqtt_sub = MQTTSubscriber(broker=mqtt_broker, port=mqtt_port, qolsys=qolsys, topics=topics)
     else:
         logging.info("No MQTT Broker.  Only getting status events from panel")
-   
 
 def get_command_line_args() -> dict:
     args = {}
@@ -120,11 +122,12 @@ def help():
             Optional:
                 --mqtt-broker   IP address or hostname of the MQTT broker
                 --mqtt-port     MQTT broker port to connect to (default is 1883)
+                --mqtt-user     Username to use when connecting to the MQTT broker
+                --mqtt-pass     Password to use when connecting to the MQTT broker
                 --topics        A list (array) of topics to subscribe to for qolsys event requests e.g. --topics=["qolsys/requests"] (Default)
             
             Usage:
                 python3 main.py --host=192.168.1.123 --port=12345 --token=yourtoken --timeout=86400 --mqtt-broker=192.168.1.2 --mqtt-port=1883 --topics=["qolsys/requests"]
-            
 
             """
     print(help_text)

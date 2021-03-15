@@ -14,7 +14,6 @@ class MQTTSubscriber:
         self.topics = topics
         self._arming_types = ["away", "stay", "disarm"]
 
-
         logging.debug(("MQTT Subscriber: ", self.broker, ":", self.port, ":", self.topics))
         mqtt_sub = mqtt_client.mqtt(self.broker, self.port)
         mqtt_sub.subscribe(topics=self.topics, cb=self.mqtt_request_received)

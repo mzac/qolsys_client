@@ -116,8 +116,6 @@ class qolsys:
         except:
             logging.error(("listen failed/stopped:", sys.exc_info()))
 
-
-
 def is_json(myjson):
     try:
         json_object = json.loads(myjson)

@@ -11,7 +11,7 @@ def qolsysArm(hostname, port, token, timeout, partition, arm_type):
         arming_type = "ARM_AWAY"
     elif arm_type.lower() == 'stay':
         arming_type = "ARM_STAY"
-    elif arm.type.lower() == 'disarm':
+    elif arm_type.lower() == 'disarm':
         arming_type = "DISARM"
 
     armString    = {

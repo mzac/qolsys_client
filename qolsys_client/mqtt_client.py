@@ -5,11 +5,12 @@ import time
 import logging
 
 class mqtt:
-
-    def __init__(self, broker: str, port=1883):
+    def __init__(self, broker: str, username: str, password: str, port=1883):
         self.client = ""
         self.broker = broker
         self.port = port
+        self.username = username
+        self.password = password
         self.connect()
 
     def connect(self):
