@@ -6,6 +6,13 @@ This package was inspired by a conversation on the Home Assistant forum:
 
 <https://community.home-assistant.io/t/qolsys-iq-panel-2-and-3rd-party-integration/231405>
 
+# NOTE:
+
+***Please use the following project instead of this project.  It is much more mature compared to this initial implementation.***
+
+<https://github.com/roopesh/ad-qolsys>
+
+# Usage:
 
 1. Run main.py (--help for parameters and help)
 
