@@ -10,7 +10,7 @@ This package was inspired by a conversation on the Home Assistant forum:
 
 ***Please use the following project instead of this project.  It is much more mature compared to this initial implementation.***
 
-<https://github.com/roopesh/ad-qolsys>
+<https://github.com/XaF/qolsysgw>
 
 # Usage:
 
